@@ -1,0 +1,34 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 22, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "dev-standalone",
+      "displayName": "Dev (Standalone + VST3, no AAX)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/dev",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "FREESOUND_BUILD_AAX": "OFF",
+        "FREESOUND_BUILD_VST3": "ON",
+        "FREESOUND_BUILD_STANDALONE": "ON"
+      }
+    },
+    {
+      "name": "release-aax",
+      "displayName": "Release with AAX",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/release-aax",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "FREESOUND_BUILD_AAX": "ON",
+        "FREESOUND_BUILD_VST3": "ON",
+        "FREESOUND_BUILD_STANDALONE": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "dev-standalone", "configurePreset": "dev-standalone" },
+    { "name": "release-aax", "configurePreset": "release-aax" }
+  ]
+}

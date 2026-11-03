@@ -1,0 +1,169 @@
+================================================================================
+  Freesound Browser — how to build from source (Windows)
+================================================================================
+
+This project builds with CMake + MSVC. JUCE 8 is downloaded automatically
+on first configure (needs internet). API secrets are NOT in the source;
+enter them later in the plugin Settings panel.
+
+
+--------------------------------------------------------------------------------
+1. Prerequisites
+--------------------------------------------------------------------------------
+
+  - Windows 10/11 (x64)
+  - CMake 3.22 or newer
+      https://cmake.org/download/
+      (or: winget install Kitware.CMake)
+
+  - Visual Studio 2022 Build Tools (or full VS) with:
+      "Desktop development with C++" / MSVC v143 + Windows SDK
+      https://visualstudio.microsoft.com/downloads/
+      (or: winget install Microsoft.VisualStudio.2022.BuildTools)
+
+  - Git (CMake FetchContent clones JUCE)
+      https://git-scm.com/
+      (or: winget install Git.Git)
+
+  Optional — AAX (Pro Tools native plug-in):
+  - Avid AAX SDK (NDA / developer account)
+  - Set path with -DAAX_SDK_PATH=... when configuring
+  - Retail Pro Tools also needs PACE / wraptool signing for AAX.
+    Without signing, use VST3 inside Blue Cat PatchWork (or similar).
+
+  Optional — Import into an open Pro Tools session (PTSL):
+  - Python 3.12+ (real install, not the Windows Store stub)
+  - Run Tools\ptsl\setup.bat  (installs grpcio + protobuf)
+  - Pro Tools running with a session open and PTSL on localhost:31416
+
+
+--------------------------------------------------------------------------------
+2. Get the source
+--------------------------------------------------------------------------------
+
+  Unzip or clone this repository into a folder, e.g.:
+
+      C:\dev\FreesoundBrowser
+
+  Open a terminal in that folder (PowerShell or "x64 Native Tools
+  Command Prompt for VS 2022").
+
+
+--------------------------------------------------------------------------------
+3. Configure
+--------------------------------------------------------------------------------
+
+  Recommended (VST3 + Standalone, skip AAX if you have no SDK):
+
+      cmake -B build -S . -DFREESOUND_BUILD_AAX=OFF
+
+  With AAX SDK:
+
+      cmake -B build -S . -DAAX_SDK_PATH="C:/path/to/aax-sdk"
+
+  First configure downloads JUCE 8.0.4 into build\_deps\ — this can take
+  a few minutes.
+
+  Useful options:
+      -DFREESOUND_BUILD_VST3=ON|OFF        (default ON)
+      -DFREESOUND_BUILD_STANDALONE=ON|OFF  (default ON)
+      -DFREESOUND_BUILD_AAX=ON|OFF         (default ON; skipped if no SDK)
+
+
+--------------------------------------------------------------------------------
+4. Build (Release)
+--------------------------------------------------------------------------------
+
+      cmake --build build --config Release
+
+  Or only specific targets:
+
+      cmake --build build --config Release --target FreesoundBrowser_VST3
+      cmake --build build --config Release --target FreesoundBrowser_Standalone
+      cmake --build build --config Release --target FreesoundBrowser_AAX
+
+
+--------------------------------------------------------------------------------
+5. Where the binaries land
+--------------------------------------------------------------------------------
+
+  VST3:
+      build\FreesoundBrowser_artefacts\Release\VST3\Freesound Browser.vst3
+
+  Standalone:
+      build\FreesoundBrowser_artefacts\Release\Standalone\Freesound Browser.exe
+
+  AAX (if built):
+      build\FreesoundBrowser_artefacts\Release\AAX\Freesound Browser.aaxplugin
+
+
+--------------------------------------------------------------------------------
+6. Folder layout so VST3 + EXE both work (including Pro Tools Import)
+--------------------------------------------------------------------------------
+
+  Put the built products next to Tools like this:
+
+      FreesoundBrowser\
+      ├── Freesound Browser.exe
+      ├── Freesound Browser.vst3\
+      │   └── Contents\...
+      └── Tools\
+          └── ptsl\
+              ├── import_to_protools.py
+              └── repo\
+                  ├── ptsl_client.py
+                  ├── PTSL_pb2.py
+                  └── PTSL_pb2_grpc.py
+
+  Copy Tools\ from the source tree into that folder (or keep the Dist
+  layout as shipped). The plug-in finds Tools by walking up from the
+  .exe / .vst3 path.
+
+  For browse / preview / download only, the .vst3 bundle or the .exe
+  alone is enough — Tools + Python are only required for PTSL Import.
+
+
+--------------------------------------------------------------------------------
+7. First run
+--------------------------------------------------------------------------------
+
+  1. Launch the Standalone, or load the VST3 in a host (e.g. PatchWork
+     in Pro Tools).
+  2. Open Settings → paste your Freesound API Token (and OAuth Client ID /
+     Secret if you need original-file downloads).
+     Apply at: https://freesound.org/apiv2/apply/
+  3. Credentials are saved under:
+         %APPDATA%\FreesoundTools\FreesoundBrowser.settings
+     They are never stored in the source code.
+
+
+--------------------------------------------------------------------------------
+8. Troubleshooting
+--------------------------------------------------------------------------------
+
+  - "No CMAKE_CXX_COMPILER" / MSBuild missing
+      Use the VS x64 Native Tools prompt, or install VS Build Tools C++ workload.
+
+  - Configure fails cloning JUCE
+      Check internet / Git; delete build\ and re-run cmake -B build -S .
+
+  - AAX skipped with a warning
+      Normal if AAX_SDK_PATH is unset. Use -DFREESOUND_BUILD_AAX=OFF to silence,
+      or pass a valid SDK path.
+
+  - Unsigned AAX moved to "Failed Plug-Ins" in Pro Tools
+      Expected without PACE signing. Use VST3 + PatchWork, or Pro Tools Developer
+      / signed AAX for retail.
+
+  - Import: "PTSL helper missing" / "Python not found"
+      Keep Tools\ptsl next to the binary (layout in section 6) and run
+      Tools\ptsl\setup.bat. Confirm: python -c "import grpc"
+
+  - Preview silent in a host
+      Use Settings → Preview audio output (WASAPI). Prefer a shared Windows
+      device, not Pro Tools ASIO, for the plugin's direct preview path.
+
+
+================================================================================
+  End of BUILD.txt
+================================================================================
